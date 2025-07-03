@@ -1,0 +1,140 @@
+services:
+  # the entrypoint of all services.
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - internal_network
+      - router_network
+
+  # web beckend on laravel
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - backend:/app/backend
+      - ./backend/php.ini:/usr/local/etc/php/php.ini
+    working_dir: /app/backend
+    depends_on:
+      - db
+    networks:
+      - internal_network
+      - passthrough_network
+    command: php artisan serve --port=80 --host=0.0.0.0
+
+  # web frontend on vue
+  frontend:
+    image: node:18
+    volumes:
+      - frontend:/app/frontend
+    working_dir: /app/frontend
+    command: npm run dev -- --port 80 --host 0.0.0.0
+    networks:
+      - internal_network
+      - passthrough_network
+
+  # database on mariadb
+  db:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: laravel
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - internal_network
+    secrets:
+      - db_root_password
+      - db_web_data_password
+
+  # line bot on fastapi
+  line_bot:
+    image: python:3.10
+    volumes:
+      - line_bot:/app/line_bot
+    working_dir: /app/line_bot
+    networks:
+      - internal_network
+      - passthrough_network
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 80 --reload"
+
+  # discord bot on fastapi
+  discord_bot:
+    image: python:3.10
+    volumes:
+      - discord_bot:/app/discord_bot
+    working_dir: /app/discord_bot
+    networks:
+      - internal_network
+      - passthrough_network
+    command: sh -c "pip install -r requirements.txt && python main.py"
+
+  # AI agent on fastapi
+  # ai_agent:
+  #   image: python:3.10
+  #   volumes:
+  #     - AI_agent:/app/AI_agent
+  #   working_dir: /app/AI_agent
+  #   networks:
+  #     - internal_network
+  #     - passthrough_network
+  #   command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 80 --reload"
+
+  # Sync the code from github and install dependencies.
+  update:
+    build:
+      context: ./update
+    working_dir: /app
+    volumes:
+      - backend:/app/backend
+      - frontend:/app/frontend
+      - line_bot:/app/line_bot
+      - discord_bot:/app/discord_bot
+      - AI_agent:/app/AI_agent
+      - ./backend/php.ini:/usr/local/etc/php/php.ini
+      - ./ssh_keys:/root/.ssh/
+    entrypoint: ["/usr/src/app/entrypoint.sh"]
+    networks:
+      - internal_network
+      - passthrough_network
+    depends_on:
+      - db
+    secrets:
+      - db_web_data_password
+      - gemini_api_key
+      - discord_bot_token
+
+
+
+networks:
+  # A router to manage all containers So you can run many services on port 80 in a single host.
+  # If you don't need this, you can remove it and expose nginx on port 80.
+  router_network:
+    external: true
+  # All containers excepts nginx will not be exposed to the host.
+  internal_network:
+    internal: true
+  # For developement, use this network for updating code and installing dependencies.
+  # Should be removed in production.
+  passthrough_network:
+    driver: bridge
+
+volumes:
+  backend:
+  frontend:
+  line_bot:
+  discord_bot:
+  AI_agent:
+  db_data:
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.pwd
+  db_web_data_password:
+    file: ./secrets/db_web_data_password.pwd
+  gemini_api_key:
+    file: ./secrets/gemini_api_key.key
+  discord_bot_token:
+    file: ./secrets/discord_bot_token.key

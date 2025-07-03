@@ -1,0 +1,6 @@
+secrets
+!secrets/*.sh
+!secrets/*.bat
+
+ssh_keys
+!ssh_keys/known_hosts
