@@ -39,10 +39,11 @@ services:
     image: mariadb:latest
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MYSQL_DATABASE: laravel
+      MYSQL_DATABASE: web_data
+      MYSQL_USER: web_data
+      MYSQL_PASSWORD_FILE: /run/secrets/db_web_data_password
     volumes:
       - db_data:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d
     networks:
       - internal_network
     secrets:
@@ -94,7 +95,7 @@ services:
       - discord_bot:/app/discord_bot
       - AI_agent:/app/AI_agent
       - ./backend/php.ini:/usr/local/etc/php/php.ini
-      - ./ssh_keys:/root/.ssh/
+      - \\wsl.localhost\Ubuntu\docker_volumes\projects\calendar\ssh_keys:/root/.ssh/
     entrypoint: ["/usr/src/app/entrypoint.sh"]
     networks:
       - internal_network

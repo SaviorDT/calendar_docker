@@ -35,6 +35,4 @@
 
 1. 執行 docker compose up，並且等待他自動將專案同步，第一次執行時，可能有些容器會 crash，不用擔心，等待 update 這個容器執行完畢後再開啟其他容器即可。
 
-1. 因為 pip 會在全域安裝，而不是像 node 或 php 安裝在資料夾內，所以需要自己去容器內執行 `pip install -r requirements.txt`
-
 1. 記得去 frontend 的容器內的 `src/main.js` 裡面把 `axios.defaults.baseURL` 改成你自己的後端網址。

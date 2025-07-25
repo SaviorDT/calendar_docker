@@ -82,9 +82,9 @@ if [ ! -d "/app/discord_bot/.git" ]; then
         echo "Error: discord_bot_token secret not found."
         exit 1
     fi
-    DISCORD_BOT_TOEKN=$(cat /run/secrets/discord_bot_token)
+    DISCORD_BOT_TOKEN=$(cat /run/secrets/discord_bot_token)
 
-    sed -i "/^token =/c\\token = $DISCORD_BOT_TOEKN" .env || echo "TOKEN = $DISCORD_BOT_TOEKN" >> .env
+    sed -i "/^TOKEN =/c\\TOKEN = $DISCORD_BOT_TOKEN" .env || echo "TOKEN = $DISCORD_BOT_TOKEN" >> .env
 
     # echo "Running pip install for fastapi..."
     # pip install --upgrade pip
